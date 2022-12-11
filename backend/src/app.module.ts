@@ -8,10 +8,31 @@ import { secret } from './utils/constants';
 import { join } from 'path/posix';
 import { isAuthenticated } from './app.middleware';
 import { UserController } from './controller/user.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { v4 as uuidv4 } from 'uuid';
+import { VideoController } from './controller/video.controller';
+import { VideoService } from './service/video.service';
+import { UserService } from './service/user.service';
+import { Video, VideoSchema } from './model/video.schema';
+import { User, UserSchema } from './model/user.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017/Stream'),
+ imports: [
+    MongooseModule.forRoot('mongodb://34.87.154.16:27017/Stream'),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
+
+     MulterModule.register({
+       storage: diskStorage({
+         destination: './public',
+         filename: (req, file, cb) => {
+           const ext = file.mimetype.split('/')[1];
+           cb(null, `${uuidv4()}-${Date.now()}.${ext}`);
+         },
+       })
+     }),
+    // MongooseModule.forRoot('mongodb://34.87.154.16:27017/Stream'),
     JwtModule.register({
       secret,
       signOptions: { expiresIn: '2h' },
@@ -20,16 +41,16 @@ import { UserController } from './controller/user.controller';
       rootPath: join(__dirname, '..', 'public'),
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, VideoController, UserController],
+  providers: [AppService, VideoService, UserService],
 })
 
 export class AppModule { 
   configure(consumer: MiddlewareConsumer) {
-  consumer
-    .apply(isAuthenticated)
-    .exclude(
-      { path: 'api/v1/rap/:id', method: RequestMethod.GET }
-    )
-    .forRoutes(RAPController);
+    consumer
+      .apply(isAuthenticated)
+      .exclude(
+        { path: 'api/v1/video/:id', method: RequestMethod.GET }
+      )
+      .forRoutes(VideoController);
 }}

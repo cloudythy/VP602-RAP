@@ -15,7 +15,7 @@ export class UserService {
         const hash = await bcrypt.hash(user.password, salt);
         const reqBody = {
             fullname: user.fullname,
-            email: user.email,
+            phoneNumber: user.phoneNumber,
             password: hash
         }
         const newUser = new this.userModel(reqBody);
@@ -23,11 +23,11 @@ export class UserService {
     }
 
     async signin(user: User, jwt: JwtService): Promise<any> {
-        const foundUser = await this.userModel.findOne({ email: user.email }).exec();
+        const foundUser = await this.userModel.findOne({ phoneNumber: user.phoneNumber }).exec();
         if (foundUser) {
             const { password } = foundUser;
             if (bcrypt.compare(user.password, password)) {
-                const payload = { email: user.email };
+                const payload = { phoneNumber: user.phoneNumber };
                 return {
                     token: jwt.sign(payload),
                 };
@@ -37,7 +37,7 @@ export class UserService {
         return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
     }
 
-    async getOne(email): Promise<User> {
-        return await this.userModel.findOne({ email }).exec();
+    async getOne(phoneNumber): Promise<User> {
+        return await this.userModel.findOne({ phoneNumber }).exec();
     }
 }
